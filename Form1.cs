@@ -4,11 +4,9 @@ namespace QuizzettinoDemo
 {
     public partial class Form1 : Form
     {
-        static SerialPort serialPort = new SerialPort();
+        static Quizzettino quiz = new Quizzettino();
         static private Button[] btnGiocatore = new Button[6];
         static private Label[] lblGiocatore = new Label[6];
-        static private bool[] Acceso = new bool[6];
-        static private bool DaSeriale = false;
 
         public Form1()
         {
@@ -17,102 +15,97 @@ namespace QuizzettinoDemo
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            CheckForIllegalCrossThreadCalls = false;
+
             string[] ports = SerialPort.GetPortNames();
             foreach (string port in ports)
                 lstPorts.Items.Add(port);
-            if (lstPorts.Items.Count > 0) lstPorts.SelectedIndex = 0;
+            if (lstPorts.Items.Count == 0)
+            {
+                MessageBox.Show("Nel sistema non sono presenti porte seriali. Impossibile proseguire!");
+                Application.Exit();
+                return;
+            }
+            lstPorts.SelectedIndex = 0;
             for (int c=0; c<=5; ++c)
             {
-                btnGiocatore[c] = new Button();
-                btnGiocatore[c].Text = (c + 1).ToString();
-                btnGiocatore[c].Width = 75;
-                btnGiocatore[c].Height = 23;
-                btnGiocatore[c].Top = 76;
-                btnGiocatore[c].Left = 12 + c * 80;
-                btnGiocatore[c].BackColor = ButtonColor(c);
-                btnGiocatore[c].Visible = true;
-                btnGiocatore[c].Enabled = false;
-                this.Controls.Add(btnGiocatore[c]);
-                btnGiocatore[c].Click += new EventHandler(ClickButton);
                 lblGiocatore[c] = new Label();
                 lblGiocatore[c].Text = "";
                 lblGiocatore[c].Width = 75;
                 lblGiocatore[c].Height = 15;
-                lblGiocatore[c].Top = 58;
+                lblGiocatore[c].Top = 18;
                 lblGiocatore[c].Left = 12 + c * 80;
                 lblGiocatore[c].Visible = true;
-                Acceso[c] = false;
                 lblGiocatore[c].BackColor = LabelColor(c);
-                this.Controls.Add(lblGiocatore[c]);
+                grpConcorrenti.Controls.Add(lblGiocatore[c]);
+                btnGiocatore[c] = new Button();
+                btnGiocatore[c].Text = (c + 1).ToString();
+                btnGiocatore[c].Width = 75;
+                btnGiocatore[c].Height = 23;
+                btnGiocatore[c].Top = 36;
+                btnGiocatore[c].Left = 12 + c * 80;
+                btnGiocatore[c].BackColor = quiz.ButtonColor[c];
+                btnGiocatore[c].Visible = true;
+                btnGiocatore[c].Enabled = false;
+                grpConcorrenti.Controls.Add(btnGiocatore[c]);
+                btnGiocatore[c].Click += new EventHandler(ClickButton);
             }
             chkAutoReset.Checked = false;
             chkSuoni.Checked = true;
         }
 
-        private Color ButtonColor(int c)
-        {
-            if (c == 0) return Color.Pink;
-            if (c == 1) return Color.Blue;
-            if (c == 2) return Color.Green;
-            if (c == 3) return Color.Yellow;
-            if (c == 4) return Color.Orange;
-            return Color.Red;
-        }
-
         private Color LabelColor(int c)
         {
-            if (Acceso[c])
-                return ButtonColor(c);
+            if (quiz.GetButton(c))
+                return quiz.ButtonColor[c-1];
             else
                 return Color.Gray;
         }
 
-        private void ClickButton(Object sender, EventArgs e)
+        private void ClickButton(Object? sender, EventArgs e)
         {
-            //int c = int.Parse(((Button)sender).Text.ToString()) - 1;
-            //Acceso[c] = !Acceso[c];
-            //lblGiocatore[c].BackColor = LabelColor(c, Acceso[c]);
-            serialPort.Write(((Button)sender).Text);
+            if (sender == null) return;
+            int c = int.Parse(((Button)sender).Text.ToString());
+            quiz.SetButton(c, true);            
         }
 
         private void btnConnetti_Click(object sender, EventArgs e)
         {
             if (btnConnetti.Text == "Disconnetti")
             {
-                serialPort.Close();
+                quiz.Close();
                 lstPorts.Enabled = true;
                 btnConnetti.Text = "Connetti";
                 btnReset.Enabled = false;
                 for (int i = 0; i <= 5; ++i)
                 {
                     btnGiocatore[i].Enabled = false;
-                    Acceso[i] = false;
                     lblGiocatore[i].BackColor = LabelColor(i);
                 }
                 btnSI.Enabled = false;
                 btnNO.Enabled = false;
                 return;
             }
+
+            // Ok, devo connettermi
+            if (lstPorts.SelectedIndex == -1)
+            {
+                MessageBox.Show("Selezionare una porta seriale dall'elenco");
+                return;
+            }
             try
             {
-                serialPort.PortName = ("" + lstPorts.SelectedItem);
-                serialPort.BaudRate = 115200;
-                serialPort.Parity = Parity.None;
-                serialPort.DataBits = 8;
-                serialPort.StopBits = StopBits.One;
-                serialPort.Handshake = Handshake.None;
-                serialPort.ReadTimeout = 500;
-                serialPort.WriteTimeout = 500;
-
-                serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-
-                serialPort.Open();
-
-                serialPort.Write("R");
+                quiz = new Quizzettino();
+                // Codice per gli eventi
+                quiz.ButtonEvent += ButtonHandler;
+                // Imposto la porta
+                quiz.PortName = (string)lstPorts.SelectedItem;
+                quiz.PortSpeed = 115200;
+                quiz.Open();
             }
             catch (Exception)
             {
-                MessageBox.Show("Errore durante l'apertura della porta " + serialPort.PortName);
+                MessageBox.Show("Errore durante l'apertura della porta " + lstPorts.SelectedText);
                 return;
             }
 
@@ -122,106 +115,74 @@ namespace QuizzettinoDemo
             for (int i = 0; i <= 5; ++i)
             {
                 btnGiocatore[i].Enabled = true;
-                Acceso[i] = false;
                 lblGiocatore[i].BackColor = LabelColor(i);
             }
             btnSI.Enabled = true;
             btnNO.Enabled = true;
-            if (chkAutoReset.Checked)
-                serialPort.Write("A");
-            else
-                serialPort.Write("a");
-            if (chkSuoni.Checked)
-                serialPort.Write("S");
-            else
-                serialPort.Write("s");
+            // Imposta le opzioni
+            quiz.SetButton(Quizzettino.ButtonCode.AutoReset, (chkAutoReset.Checked));
+            quiz.SetButton(Quizzettino.ButtonCode.Sound, (chkSuoni.Checked));
+            // Resetta Quizzettino
+            quiz.SetButton(Quizzettino.ButtonCode.Reset, true);
+
         }
 
-        private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+        private void ButtonHandler(object? sender, Quizzettino.QuizzettinoButtonEventArgs e)
         {
-            DaSeriale = true;
-            SerialPort sp = (SerialPort)sender;
-            string indata = sp.ReadExisting().Replace("\r", "").Replace("\n", "");
-            foreach (char c in indata)
-            {                
-                switch (c)
-                {
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                        // Il giocatore 'c' ha premuto il pulsante!
-                        int i = c - '0' - 1;
-                        Acceso[i] = true;
-                        lblGiocatore[i].BackColor = LabelColor(i);
-                        //for (int g = 0; g <= 5; ++g)
-                        //    btnGiocatore[g].Enabled = false;
-                        break;
-                    case 'R':  // Reset
-                        for (int g = 0; g <= 5; ++g)
-                        {
-                            Acceso[g] = false;
-                            lblGiocatore[g].BackColor = LabelColor(g);
-                        }
-                        break;
-                    case '+': // SI
-                        btnSI.BackColor = Color.Green;
-                        Thread.Sleep(1000);
-                        btnSI.BackColor = Color.DarkGreen;
-                        break;
-                    case '-': // NO
-                        btnNO.BackColor = Color.Red;
-                        Thread.Sleep(1000);
-                        btnNO.BackColor = Color.DarkRed;
-                        break;
-                    case 'A':
-                        chkAutoReset.Checked = true;
-                        break;
-                    case 'a':
-                        chkAutoReset.Checked = false;
-                        break;
-                }
+            if (sender == null) return;
+            int c = (int)e.Button;
+            if (c >= 1 && c <= 6)
+            {
+                // Il giocatore 'c' ha premuto il pulsante!
+                lblGiocatore[c-1].BackColor = LabelColor(c);
+                return;
             }
-            DaSeriale = false;
-        }
+            bool value = e.State;
+            switch (e.Button)
+            {
+                case Quizzettino.ButtonCode.Reset:
+                    for (int g = 0; g <= 5; ++g)
+                        lblGiocatore[g].BackColor = LabelColor(g);
+                    break;
+                case Quizzettino.ButtonCode.OKButton:
+                    btnSI.BackColor = Color.Green;
+                    Thread.Sleep(1000);
+                    btnSI.BackColor = Color.DarkGreen;
+                    break;
+                case Quizzettino.ButtonCode.NOButton:
+                    btnNO.BackColor = Color.Red;
+                    Thread.Sleep(1000);
+                    btnNO.BackColor = Color.DarkRed;
+                    break;
+                case Quizzettino.ButtonCode.AutoReset:
+                    chkAutoReset.Checked = e.State;
+                    break;
+            }
 
+        }
         private void btnReset_Click(object sender, EventArgs e)
         {
-            serialPort.Write("R");
+            quiz.SetButton(Quizzettino.ButtonCode.Reset, true);
         }
 
         private void btnSI_Click(object sender, EventArgs e)
         {
-            serialPort.Write("+");
+            quiz.SetButton(Quizzettino.ButtonCode.OKButton, true);
         }
 
         private void btnNO_Click(object sender, EventArgs e)
         {
-            serialPort.Write("-");
+            quiz.SetButton(Quizzettino.ButtonCode.NOButton, true);
         }
 
         private void chkAutoReset_CheckedChanged(object sender, EventArgs e)
         {
-            if (!DaSeriale && serialPort.IsOpen)
-            {
-                if (chkAutoReset.Checked)
-                    serialPort.Write("A");
-                else
-                    serialPort.Write("a");
-            }
+            quiz.SetButton(Quizzettino.ButtonCode.AutoReset, (chkAutoReset.Checked));
         }
 
         private void chkSuoni_CheckedChanged(object sender, EventArgs e)
         {
-            if (!DaSeriale && serialPort.IsOpen)
-            {
-                if (chkSuoni.Checked)
-                    serialPort.Write("S");
-                else
-                    serialPort.Write("s");
-            }
+            quiz.SetButton(Quizzettino.ButtonCode.Sound, (chkSuoni.Checked));
         }
     }
 }

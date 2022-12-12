@@ -35,6 +35,7 @@
             this.btnNO = new System.Windows.Forms.Button();
             this.chkAutoReset = new System.Windows.Forms.CheckBox();
             this.chkSuoni = new System.Windows.Forms.CheckBox();
+            this.grpConcorrenti = new System.Windows.Forms.GroupBox();
             this.SuspendLayout();
             // 
             // btnConnetti
@@ -58,7 +59,7 @@
             // btnReset
             // 
             this.btnReset.Enabled = false;
-            this.btnReset.Location = new System.Drawing.Point(338, 11);
+            this.btnReset.Location = new System.Drawing.Point(201, 117);
             this.btnReset.Name = "btnReset";
             this.btnReset.Size = new System.Drawing.Size(75, 23);
             this.btnReset.TabIndex = 2;
@@ -69,7 +70,7 @@
             // btnSI
             // 
             this.btnSI.BackColor = System.Drawing.Color.DarkGreen;
-            this.btnSI.Location = new System.Drawing.Point(152, 130);
+            this.btnSI.Location = new System.Drawing.Point(150, 146);
             this.btnSI.Name = "btnSI";
             this.btnSI.Size = new System.Drawing.Size(75, 23);
             this.btnSI.TabIndex = 3;
@@ -79,7 +80,7 @@
             // btnNO
             // 
             this.btnNO.BackColor = System.Drawing.Color.DarkRed;
-            this.btnNO.Location = new System.Drawing.Point(258, 130);
+            this.btnNO.Location = new System.Drawing.Point(256, 146);
             this.btnNO.Name = "btnNO";
             this.btnNO.Size = new System.Drawing.Size(75, 23);
             this.btnNO.TabIndex = 4;
@@ -89,7 +90,7 @@
             // chkAutoReset
             // 
             this.chkAutoReset.AutoSize = true;
-            this.chkAutoReset.Location = new System.Drawing.Point(429, 14);
+            this.chkAutoReset.Location = new System.Drawing.Point(282, 120);
             this.chkAutoReset.Name = "chkAutoReset";
             this.chkAutoReset.Size = new System.Drawing.Size(80, 19);
             this.chkAutoReset.TabIndex = 5;
@@ -100,7 +101,7 @@
             // chkSuoni
             // 
             this.chkSuoni.AutoSize = true;
-            this.chkSuoni.Location = new System.Drawing.Point(230, 15);
+            this.chkSuoni.Location = new System.Drawing.Point(12, 150);
             this.chkSuoni.Name = "chkSuoni";
             this.chkSuoni.Size = new System.Drawing.Size(56, 19);
             this.chkSuoni.TabIndex = 6;
@@ -108,11 +109,20 @@
             this.chkSuoni.UseVisualStyleBackColor = true;
             this.chkSuoni.CheckedChanged += new System.EventHandler(this.chkSuoni_CheckedChanged);
             // 
+            // grpConcorrenti
+            // 
+            this.grpConcorrenti.Location = new System.Drawing.Point(3, 39);
+            this.grpConcorrenti.Name = "grpConcorrenti";
+            this.grpConcorrenti.Size = new System.Drawing.Size(506, 70);
+            this.grpConcorrenti.TabIndex = 9;
+            this.grpConcorrenti.TabStop = false;
+            this.grpConcorrenti.Text = "Concorrenti";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(521, 165);
+            this.ClientSize = new System.Drawing.Size(521, 181);
             this.Controls.Add(this.chkSuoni);
             this.Controls.Add(this.chkAutoReset);
             this.Controls.Add(this.btnNO);
@@ -120,6 +130,7 @@
             this.Controls.Add(this.btnReset);
             this.Controls.Add(this.lstPorts);
             this.Controls.Add(this.btnConnetti);
+            this.Controls.Add(this.grpConcorrenti);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Quizzettino demo";
@@ -138,5 +149,6 @@
         private Button btnNO;
         private CheckBox chkAutoReset;
         private CheckBox chkSuoni;
+        private GroupBox grpConcorrenti;
     }
 }
