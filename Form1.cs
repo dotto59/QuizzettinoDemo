@@ -98,6 +98,7 @@ namespace QuizzettinoDemo
                 quiz = new Quizzettino();
                 // Codice per gli eventi
                 quiz.ButtonEvent += ButtonHandler;
+                quiz.StringEvent += StringHandler;
                 // Imposto la porta
                 quiz.PortName = (string)lstPorts.SelectedItem;
                 quiz.PortSpeed = 115200;
@@ -119,9 +120,9 @@ namespace QuizzettinoDemo
             }
             btnSI.Enabled = true;
             btnNO.Enabled = true;
-            // Imposta le opzioni
-            quiz.SetButton(Quizzettino.ButtonCode.AutoReset, (chkAutoReset.Checked));
-            quiz.SetButton(Quizzettino.ButtonCode.Sound, (chkSuoni.Checked));
+            // Legge ed imposta le opzioni di configurazione
+            quiz.GetConfig();
+
             // Resetta Quizzettino
             quiz.SetButton(Quizzettino.ButtonCode.Reset, true);
 
@@ -159,6 +160,19 @@ namespace QuizzettinoDemo
                     break;
             }
 
+        }
+
+        private void StringHandler(object? sender, Quizzettino.QuizzettinoStringEventArgs e)
+        {
+            switch (e.Code)
+            {
+                case 'E': // EEPROM dump
+                    // Fa il parse della risposta
+                    string[] valore = e.Value.Split(';');
+                    chkAutoReset.Checked = (valore[1] == "1");
+                    chkSuoni.Checked = (valore[2] == "1");
+                    break;
+            }
         }
         private void btnReset_Click(object sender, EventArgs e)
         {

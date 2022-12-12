@@ -12,25 +12,21 @@ namespace QuizzettinoDemo
 {
     internal class Quizzettino
     {
+        #region Public
+
         public enum ButtonCode
         {
             Reset = 0,
             Button1, Button2, Button3, Button4, Button5, Button6,
             OKButton, NOButton,
-            AutoReset, Sound
+            AutoReset, Sound, Config
         }
         // Comandi seriali
-        public string[] ButtonCmd = new string[11] { "R", "1", "2", "3", "4", "5", "6", "+", "-", "A", "S" };
+        public string[] ButtonCmd = new string[12] { "R", "1", "2", "3", "4", "5", "6", "+", "-", "A", "S", "?" };
 
         public static SerialPort Port = new SerialPort();
 
         public Color[] ButtonColor = new Color[6] { Color.Pink, Color.Blue, Color.Green, Color.Yellow, Color.Orange, Color.Red };
-
-        private bool[] _Button = new bool[6];
-
-        public event EventHandler<QuizzettinoButtonEventArgs>? ButtonEvent;
-
-        private bool _FromSerial = false;
 
         public string PortName
         {
@@ -65,6 +61,46 @@ namespace QuizzettinoDemo
             get { return Port.ReadTimeout; }
         }
 
+        #endregion Public
+
+        #region Events
+
+        public event EventHandler<QuizzettinoButtonEventArgs>? ButtonEvent;
+        public class QuizzettinoButtonEventArgs : EventArgs
+        {
+            public ButtonCode Button { get; set; }
+            public bool State { get; set; }
+        }
+
+        public event EventHandler<QuizzettinoStringEventArgs>? StringEvent;
+        public class QuizzettinoStringEventArgs : EventArgs
+        {
+            public char Code { get; set; }
+            public string Value { get; set; } = "";
+        }
+
+        #endregion Events
+
+        #region Private
+
+        private bool[] _Button = new bool[6];
+
+        private bool _FromSerial = false;
+
+        #endregion Private
+
+        public Quizzettino()
+        {
+            Port.Parity = Parity.None;
+            Port.DataBits = 8;
+            Port.StopBits = StopBits.One;
+            Port.Handshake = Handshake.None;
+            Port.ReadTimeout = PortTimeout;
+            Port.WriteTimeout = PortTimeout;
+            for (int i = 0; i <= 5; ++i) _Button[i] = false;
+            return;
+        }
+
         public void SetButton(int i, bool state)
         {
             SetButton((ButtonCode)i, state);
@@ -72,6 +108,7 @@ namespace QuizzettinoDemo
 
         public void SetButton(ButtonCode button, bool state)
         {
+            if (!Port.IsOpen) return;
             int b = ((int)button);
             if (button >= ButtonCode.Button1 && button <= ButtonCode.Button6) _Button[b - 1] = state;
             if (_FromSerial)
@@ -84,7 +121,7 @@ namespace QuizzettinoDemo
                 {
                     string cmd = ButtonCmd[b];
                     // Pulsanti con stato: se disattivo, il comando è in minuscolo
-                    if (state = false && (button == ButtonCode.AutoReset || button == ButtonCode.Sound)) cmd = cmd.ToLower();
+                    if (state == false && (button == ButtonCode.AutoReset || button == ButtonCode.Sound)) cmd = cmd.ToLower();
                     Port.Write(cmd);
                 }
             }
@@ -92,29 +129,16 @@ namespace QuizzettinoDemo
 
         public bool GetButton(int i)
         {
+            if (!Port.IsOpen) return false;
             if (i < 1 || i > 6) return false;
             return _Button[i-1];
         }
 
-        public class QuizzettinoButtonEventArgs : EventArgs
+        public bool GetConfig()
         {
-            public ButtonCode Button { get; set; }
-            public bool State { get; set; }
-        }
-
-        public Quizzettino()
-        {
-            Port.Parity = Parity.None;
-            Port.DataBits = 8;
-            Port.StopBits = StopBits.One;
-            Port.Handshake = Handshake.None;
-            Port.ReadTimeout = PortTimeout;
-            Port.WriteTimeout = PortTimeout;
-            for (int i = 0; i < 6; ++i)
-            {
-                SetButton(i, false);
-            }
-            return;
+            if (!Port.IsOpen) return false;
+            Port.Write("?");
+            return true;
         }
 
         public bool Open()
@@ -136,9 +160,15 @@ namespace QuizzettinoDemo
 
         private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
-            _FromSerial = true;
             SerialPort sp = (SerialPort)sender;
-            string indata = sp.ReadExisting().Replace("\r", "").Replace("\n", "");
+            string indata = sp.ReadLine().Replace("\r", "");
+            // Comandi con risposta stringa
+            if (indata[0] == 'E')
+            {   // EEPROM dump
+                StringEvent?.Invoke(this, new QuizzettinoStringEventArgs() { Code = indata[0], Value = indata.Substring(1) });
+                return;
+            }
+            _FromSerial = true;
             foreach (char c in indata)
             {
                 int g = 0;
