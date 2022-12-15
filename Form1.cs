@@ -1,4 +1,5 @@
 using System.IO.Ports;
+using QuizLib;
 
 namespace QuizzettinoDemo
 {
@@ -159,7 +160,6 @@ namespace QuizzettinoDemo
                     chkAutoReset.Checked = e.State;
                     break;
             }
-
         }
 
         private void StringHandler(object? sender, Quizzettino.QuizzettinoStringEventArgs e)
